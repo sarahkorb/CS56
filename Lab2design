@@ -1,0 +1,81 @@
+----------------------------------------------------------------------------------
+-- Company:         Engs 31 / CoSc 56 17X
+-- Engineer:        Sarah Korb,  worked with Ellie Baker (HW 2)
+-- 
+-- Create Date:     07/19/2020 06:05:52 PM
+-- Design Name:     Lab 2
+-- Module Name:     bcd_digit
+-- Project Name:    Lab2 
+-- Target Devices:  Artix7 / Basys3
+-- Tool Versions:   Vivado 2016.4
+-- Description:     BCD counter that can count up or down
+--                  
+-- 
+-- Dependencies:    
+-- 
+-- Revision:
+-- Revision 0.01 - File Created
+-- Additional Comments:
+-- 
+----------------------------------------------------------------------------------
+library IEEE;
+use IEEE.std_logic_1164.all;
+use ieee.numeric_std.all;
+
+---BCD counter (up/down)
+entity bcd_digit is
+	port(clk:	in std_logic;
+    	 reset: in std_logic; --resets counter
+         run_stop:   	in std_logic; --load control
+         up_down:in std_logic; --count up or down
+    	 y:	    out std_logic_vector(3 downto 0); ---output
+         tc:	out std_logic ); --terminal count
+end entity;
+         
+architecture behavior of bcd_digit is
+
+signal uy: unsigned(3 downto 0) := "0000";	
+									
+begin
+	y <= std_logic_vector(uy);				
+    ---incrementing or decrementing appropriately
+	stage1: process(clk)						
+	begin
+    	if rising_edge(clk) then ---reset input takes priority over all 
+        	if reset = '1' then
+        	       uy <= "0000";
+        	else
+        	if run_stop = '1' then  ---if we are coutning up, reset to 0 when at 9
+        		if up_down = '1' then
+        		  if uy = "1001" then
+        				uy <= "0000";						
+                  else
+        				uy <= uy+1;		--otherwise, keep incrementing 			
+            	  end if;  
+            	else                       ---if we are counting down, reset to 9 when at 0
+            	   if uy = "0000" then
+            	        uy <= "1001";
+            	   else
+            	      uy <= uy-1;	---otherwise keep decrementing
+            	   end if;
+            	end if; 
+            end if;           	
+         end if;    	
+	end if;
+    end process;
+    
+    ---output 'tc'
+    stage2: process(uy, up_down)
+    begin                           ---change tc to high if count is....
+    tc <= '0';
+    	if (uy = "0000") then     ---'0' and we are counting down
+    	   if up_down ='0' then
+    	       tc <= '1';
+    	   end if;
+    	elsif (uy = "1001") then      ---'9' and we are counting up
+    	   if up_down ='1' then
+    	       tc <= '1';
+    	   end if;
+    	end if;
+    end process;
+end behavior;
